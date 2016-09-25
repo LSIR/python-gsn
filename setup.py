@@ -21,7 +21,7 @@ setup(
     name='gsn',
 
     # Versions should comply with PEP440.
-    version='0.1.0',
+    version='0.2.0',
 
     description='A python wrapper for Global Sensor Networks API',
     long_description=long_description,

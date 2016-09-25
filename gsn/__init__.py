@@ -1,5 +1,6 @@
 from sanction import Client, transport_headers
 from .sensor import Sensor
+import time
 try:
     from urllib2 import HTTPError
 except:
@@ -27,13 +28,28 @@ class API(object):
                              )
         self.client.request_token(grant_type='client_credentials', redirect_uri=redirect_uri)
 
+        assert hasattr(self.client, 'expires_in')
+
+        self.expiration = time.time() + self.client.expires_in
+
+    def refresh_token(self):
+        """ Renew the access token by submitting a request with the previously
+        received refresh_token
+        """
+        assert hasattr(self.client, 'refresh_token')
+
+        self.client.request_token(grant_type='refresh_token')
+
+        self.expiration = time.time() + self.client.expires_in
+
     def get_latest_values(self, vs_name=None):
         """ Query the API to get the latest values of a given virtual sensor.
         :param vs_name: The name of the virtual sensor.
         :returns: A Sensor object.
         """
         assert vs_name is not None
-
+        if self.expiration <= time.time():
+            self.refresh_token()
         data = self.client.request("/sensors/{}?latestValues=True".format(vs_name))
         return Sensor(geojson_object=data)
 
@@ -45,7 +61,8 @@ class API(object):
         """
 
         assert sensor_data is not None
-
+        if self.expiration <= time.time():
+            self.refresh_token()
         try:
             res = self.client.request("/sensors/{}/data".format(sensor_data.name),
                                       data=sensor_data.to_geojson().encode('utf_8'),
