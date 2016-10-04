@@ -50,7 +50,14 @@ class API(object):
         assert vs_name is not None
         if self.expiration <= time.time():
             self.refresh_token()
-        data = self.client.request("/sensors/{}?latestValues=True".format(vs_name))
+        try:
+            data = self.client.request("/sensors/{}?latestValues=True".format(vs_name))
+        except:
+            self.refresh_token()
+            try:
+                data = self.client.request("/sensors/{}?latestValues=True".format(vs_name))
+            except:
+                return None
         return Sensor(geojson_object=data)
 
     def push_values(self, sensor_data=None):
@@ -67,6 +74,12 @@ class API(object):
             res = self.client.request("/sensors/{}/data".format(sensor_data.name),
                                       data=sensor_data.to_geojson().encode('utf_8'),
                                       headers={'Content-type': 'application/json'})
-        except HTTPError as e:
-            return e.readlines()
+        except:
+            self.refresh_token()
+            try:
+                res = self.client.request("/sensors/{}/data".format(sensor_data.name),
+                                          data=sensor_data.to_geojson().encode('utf_8'),
+                                          headers={'Content-type': 'application/json'})
+            except HTTPError as e:
+                return e.readlines()
         return res
