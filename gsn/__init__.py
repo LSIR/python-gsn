@@ -38,7 +38,7 @@ class API(object):
         """
         assert hasattr(self.client, 'refresh_token')
 
-        self.client.request_token(grant_type='refresh_token')
+        self.client.refresh()
 
         self.expiration = time.time() + self.client.expires_in
 
